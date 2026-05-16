@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+.venv/
+venv/
+env/
+
+# Environment variables
+.env
+
+# Credentials
+credentials/
+*.json
+
+# Data files
+data/raw/
+data/processed/
+data/output/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# VS Code
+.vscode/
+
+# Logs
+*.log
+logs/
+
+# Airflow
+airflow/logs/
+airflow/plugins/
+airflow/config/
+
+# OS
+.DS_Store
+Thumbs.db
