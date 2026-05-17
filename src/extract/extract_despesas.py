@@ -41,8 +41,10 @@ def extract_despesas_periodo(
     ano: int = DEFAULT_YEAR,
     mes: int = DEFAULT_MONTH,
     limite_deputados: int | None = None,
+    deputados: list[dict] | None = None,
 ) -> list[dict]:
-    deputados = extract_deputados()
+    if deputados is None:
+        deputados = extract_deputados()
 
     if limite_deputados is not None:
         deputados = deputados[:limite_deputados]
@@ -188,4 +190,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-    #Responsavel pela extracao de despesas de um deputado especifico

@@ -35,7 +35,9 @@ def run_extract(ano: int, mes: int, limite_deputados: int | None) -> None:
         ano=ano,
         mes=mes,
         limite_deputados=limite_deputados,
+        deputados=deputados,
     )
+
     save_despesas_raw(
         despesas=despesas,
         ano=ano,
@@ -50,16 +52,23 @@ def run_transform(ano: int, mes: int) -> None:
 
     deputados_input_path = get_latest_deputados_file()
     deputados_raw = load_deputados_raw(deputados_input_path)
+
     df_deputados = transform_deputados(deputados_raw)
     save_deputados_silver(df_deputados)
 
-    despesas_input_path = get_latest_despesas_file(ano=ano, mes=mes)
+    despesas_input_path = get_latest_despesas_file(
+        ano=ano,
+        mes=mes,
+    )
+
     despesas_raw = load_despesas_raw(despesas_input_path)
+
     df_despesas = transform_despesas(
         data=despesas_raw,
         ano=ano,
         mes=mes,
     )
+
     save_despesas_silver(
         df=df_despesas,
         ano=ano,
@@ -73,7 +82,10 @@ def run_quality(ano: int, mes: int) -> None:
     logger.info("Iniciando etapa de quality checks")
 
     run_deputados_checks()
-    run_despesas_checks(ano=ano, mes=mes)
+    run_despesas_checks(
+        ano=ano,
+        mes=mes,
+    )
 
     logger.info("Etapa de quality checks finalizada")
 
@@ -88,7 +100,10 @@ def run_cloud_load(ano: int, mes: int) -> None:
     logger.info("Iniciando carga no BigQuery")
 
     load_deputados()
-    load_despesas(ano=ano, mes=mes)
+    load_despesas(
+        ano=ano,
+        mes=mes,
+    )
 
     logger.info("Carga no BigQuery finalizada")
 
