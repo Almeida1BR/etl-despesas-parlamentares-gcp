@@ -1,10 +1,15 @@
+import argparse
 import json
 from datetime import datetime, timezone
 
 from src.extract.api_client import CamaraAPIClient
 from src.extract.extract_deputados import extract_deputados
 from src.utils.config import DEFAULT_MONTH, DEFAULT_YEAR
+from src.utils.logger import get_logger
 from src.utils.paths import BRONZE_DIR, ensure_directories
+
+
+logger = get_logger(__name__)
 
 
 def extract_despesas_by_deputado(
@@ -43,23 +48,57 @@ def extract_despesas_periodo(
         deputados = deputados[:limite_deputados]
 
     todas_despesas = []
+    total_deputados = len(deputados)
+    total_com_erro = 0
+
+    logger.info(
+        "Iniciando extração de despesas. Ano=%s, mês=%s, deputados=%s",
+        ano,
+        mes,
+        total_deputados,
+    )
 
     for index, deputado in enumerate(deputados, start=1):
         id_deputado = deputado["id"]
         nome_deputado = deputado.get("nome")
 
-        print(
-            f"[{index}/{len(deputados)}] "
-            f"Extraindo despesas de {nome_deputado} ({id_deputado})"
+        logger.info(
+            "[%s/%s] Extraindo despesas de %s (%s)",
+            index,
+            total_deputados,
+            nome_deputado,
+            id_deputado,
         )
 
-        despesas = extract_despesas_by_deputado(
-            id_deputado=id_deputado,
-            ano=ano,
-            mes=mes,
-        )
+        try:
+            despesas = extract_despesas_by_deputado(
+                id_deputado=id_deputado,
+                ano=ano,
+                mes=mes,
+            )
 
-        todas_despesas.extend(despesas)
+            todas_despesas.extend(despesas)
+
+            logger.info(
+                "Deputado %s (%s): %s despesas extraídas",
+                nome_deputado,
+                id_deputado,
+                len(despesas),
+            )
+
+        except Exception as exc:
+            total_com_erro += 1
+
+            logger.exception(
+                "Erro ao extrair despesas de %s (%s): %s",
+                nome_deputado,
+                id_deputado,
+                exc,
+            )
+
+    logger.info("Extração de despesas finalizada")
+    logger.info("Total de despesas extraídas: %s", len(todas_despesas))
+    logger.info("Deputados com erro: %s", total_com_erro)
 
     return todas_despesas
 
@@ -88,30 +127,65 @@ def save_despesas_raw(
     with output_path.open("w", encoding="utf-8") as file:
         json.dump(despesas, file, ensure_ascii=False, indent=2)
 
+    logger.info("Arquivo de despesas salvo em: %s", output_path)
+
     return str(output_path)
 
 
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Extrai despesas parlamentares da API Dados Abertos da Câmara."
+    )
+
+    parser.add_argument(
+        "--ano",
+        type=int,
+        default=DEFAULT_YEAR,
+        help="Ano de referência das despesas.",
+    )
+
+    parser.add_argument(
+        "--mes",
+        type=int,
+        default=DEFAULT_MONTH,
+        help="Mês de referência das despesas.",
+    )
+
+    parser.add_argument(
+        "--limite-deputados",
+        type=int,
+        default=10,
+        help="Quantidade máxima de deputados a processar. Use 0 para processar todos.",
+    )
+
+    return parser.parse_args()
+
+
 def main() -> None:
-    ano = DEFAULT_YEAR
-    mes = DEFAULT_MONTH
+    args = parse_args()
+
+    limite_deputados = (
+        None if args.limite_deputados == 0 else args.limite_deputados
+    )
 
     despesas = extract_despesas_periodo(
-        ano=ano,
-        mes=mes,
-        limite_deputados=10,
+        ano=args.ano,
+        mes=args.mes,
+        limite_deputados=limite_deputados,
     )
 
     output_path = save_despesas_raw(
         despesas=despesas,
-        ano=ano,
-        mes=mes,
+        ano=args.ano,
+        mes=args.mes,
     )
 
-    print(f"Despesas extraídas: {len(despesas)}")
-    print(f"Arquivo salvo em: {output_path}")
+    logger.info("Processo concluído")
+    logger.info("Ano/mês: %s/%s", args.ano, f"{args.mes:02d}")
+    logger.info("Despesas extraídas: %s", len(despesas))
+    logger.info("Arquivo salvo em: %s", output_path)
 
 
 if __name__ == "__main__":
     main()
-
-#Responsavel pela extracao de despesas de um deputado especifico
+    #Responsavel pela extracao de despesas de um deputado especifico
