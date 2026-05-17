@@ -1,3 +1,10 @@
+# Environment variables
+.env
+
+# Credentials
+credentials/
+*.json
+
 # Python
 __pycache__/
 *.py[cod]
@@ -7,18 +14,6 @@ __pycache__/
 .venv/
 venv/
 env/
-
-# Environment variables
-.env
-
-# Credentials
-credentials/
-*.json
-
-# Data files
-data/raw/
-data/processed/
-data/output/
 
 # Jupyter
 .ipynb_checkpoints/
